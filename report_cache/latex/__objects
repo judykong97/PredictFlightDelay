@@ -1,0 +1,15 @@
+preprocessing	
+eda	
+logistic-regression	
+variable-selection	
+unpruned-dt	
+pruned-dt	
+naive-rf	
+balanced-rf	
+prediction	
+eval	
+unnamed-chunk-1	
+unnamed-chunk-2	months.del	months.no
+unnamed-chunk-3	temp
+unnamed-chunk-4	actual	actual.dep	CM	preds
+unnamed-chunk-5	

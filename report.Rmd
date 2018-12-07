@@ -1,65 +1,83 @@
 ---
-title: "Final Project Report"
+title: "Data Mining Final Project Report - Team Galois"
 author: "Eugene Han (eugeneh), Judy Kong (junhank)"
 date: "12/7/2018"
 output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, cache = TRUE, autodep = TRUE, cache.comments = TRUE)
+library(pROC)
+library(caret)
+library(randomForest)
+library(glmnet)
+library(knitr)
+
+load("data/workspace.RData")
 ```
 
-## Preprocessing
+## Introduction
+Experiencing a delayed flight can be an especially frustrating experience. Since airlines do not reimburse for flight delays, the average delay can cost travelers hundreds of dollars in lost time and out of pocket expense. Using the Airline On-Time Performance Data made available through the Bureau of Transportation Statistics of the U.S. Department of Transportation, we analyze flight departures from the Pittsburgh International Airport in 2015 and 2016 to build a model to predict flight delays. 
 
-```{r preprocessing}
+## Exploration
+
+### Data Preprocessing
+We first filtered the data such that we only viewed departing flights from Pittsburgh International Airport (PIT). We chose to combine the flight data from 2015 and 2016 since they both had very similar base rates. We used this combined dataset for training and tested on the visible 2017 dataset. In total, we had 50,918 observations for trianing and 13,588 observations for testing.
+
+```{r, echo = F}
+kable(matrix(c(87, 13, 90.3, 9.7), nrow = 2, byrow = T, dimnames = list(c("training", "testing"), c("Percent No Delay", "Percent Delay"))), caption = "Base rates.")
 ```
 
-## Exploratory Data Analysis
+From Table 1, we see that the samples are highly imbalanced. Using a combination of manual inclusion, logistic regression, and stepwise regression with AIC penalty, the initial variables chosen to be important include: `QUARTER, MONTH, DAY_OF_MONTH, DAY_OF_WEEK, CARRIER, DEST, DISTANCE, CRS_DEP_TIME`.
 
-```{r eda}
+```{r, fig.cap = "Distribution of the MONTHS variable for delayed and non-delayed flights. The cyan represents delayed flights and red represents non-delayed flights; the colors are overlayed.", fig.width = 6, fig.height = 3.5, echo = F}
+months.del = table(onlyPIT$MONTH[onlyPIT$DEP_DEL15 == 1])/sum(onlyPIT$DEP_DEL15 == 1)
+months.no = table(onlyPIT$MONTH[onlyPIT$DEP_DEL15 == 0])/sum(onlyPIT$DEP_DEL15 == 0)
+
+plot(months.del, xlab = "Months", ylab = "Percent", col = "cyan")
+lines(months.no, col = rgb(1, 0, 0, 0.5))
 ```
 
-## Logistic Regression
-
-```{r logistic-regression}
+```{r, echo = F}
+temp = c(summary(onlyPIT$DISTANCE[which(onlyPIT$DEP_DEL15 == 0)]),
+summary(onlyPIT$DISTANCE[which(onlyPIT$DEP_DEL15 == 1)]),
+summary(onlyPIT$CRS_DEP_TIME[which(onlyPIT$DEP_DEL15 == 0)]),
+summary(onlyPIT$CRS_DEP_TIME[which(onlyPIT$DEP_DEL15 == 1)]))
+kable(matrix(temp, nrow = 4, byrow = T, dimnames = list(c("DISTANCE, no delay", "DISTANCE, delay", "CRS_DEP_TIME, no delay", "CRS_DEP_TIME, delay"), names(summary(onlyPIT$DISTANCE)))), caption = "Summary of numeric variables.")
 ```
 
-## Variable Selection
+From Figure 1, we see that flight delays are more likely to occur in the summer months of June, July, and August. We also note December which is most likely for the winter holidays. In Table 2, we see that the `DISTANCE` variable does not actually differ much between the two labels, however `CRS_DEP_TIME` does appear to have a significant difference. 
 
-```{r variable-selection}
+## Supervised Analysis
+
+
+write about using the lasso for variable selection, write about using the balanced random forest
+
+## Analysis of Results - CURRENTLY IN THE PROCESS
+```{r, echo = F}
+actual = read.csv("data/actual.csv")
+actual.dep = actual$DEP_DEL15
+actual.dep[which(is.na(actual.dep))] = 0
+actual.dep = as.factor(actual.dep)
+load("data/stat462final.RData")
+preds = as.factor(as.integer(delay.guesses > 0.5))
+CM = confusionMatrix(actual.dep, preds)
+
+kable(as.matrix(CM$table), caption = "Confusion matrix on the predicted results. Rows are predictions and columns are the actual.")
 ```
 
-## Decision Tree
+-Does a good job at capturing True Negatives, high sensitivity, very low specificity
 
-### Unpruned Decision Tree
-
-```{r unpruned-dt}
+```{r}
+plot(roc(actual.dep, as.numeric(preds)))
 ```
 
-### Pruned Decision Tree
-
-```{r pruned-dt}
+```{r}
+right = actual[which(preds == actual.dep),]
+wrong = actual[which(preds != actual.dep),]
 ```
 
-## Random Forest
+### Further Remarks
+We did not include any hourly weather forecasts for Pittsbugh because we were unable to find a suitable dataset. However, with the prescence of such a dataset, I think it would be quite clear that rain and snow would be strong indicators of late flights.
 
-## Naive Random Forest
-
-```{r naive-rf}
-```
-
-## Balanced Random Forest
-
-```{r balanced-rf}
-```
-
-## Prediction with Selected Model
-
-```{r prediction}
-```
-
-## Evaluation
-
-```{r eval}
-```
-
+One thing we noted very early on was that the prescence of a late flight usually delayed succeeding flights. This in itself is actually quite a loaded problem because it involves utilizing the planes arriving into Pittsburgh. Using any distinguisable IDs unique to the planes, one can determine which planes are coming in to Pittsburgh and where they are departing next. One additional piece of information that could be quite useful is which gate the plane is supposed to arrive at. This is because generally the plane that lands at the gate will be the one responsible for that gate's next takeoff. By modeling whether an arriving plane is likely to be delayed or arriving late, one could use this probability of lateness as a prior for a bayesian model that makes use of this fact. This prior can also be equipped with a diminishing return because generally if one plane is delayed then usually the airport will quickly (to some extent of quick) resolve the issue.
