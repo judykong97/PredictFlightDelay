@@ -1,0 +1,65 @@
+---
+title: "Final Project Report"
+author: "Eugene Han (eugeneh), Judy Kong (junhank)"
+date: "12/7/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preprocessing
+
+```{r preprocessing}
+```
+
+## Exploratory Data Analysis
+
+```{r eda}
+```
+
+## Logistic Regression
+
+```{r logistic-regression}
+```
+
+## Variable Selection
+
+```{r variable-selection}
+```
+
+## Decision Tree
+
+### Unpruned Decision Tree
+
+```{r unpruned-dt}
+```
+
+### Pruned Decision Tree
+
+```{r pruned-dt}
+```
+
+## Random Forest
+
+## Naive Random Forest
+
+```{r naive-rf}
+```
+
+## Balanced Random Forest
+
+```{r balanced-rf}
+```
+
+## Prediction with Selected Model
+
+```{r prediction}
+```
+
+## Evaluation
+
+```{r eval}
+```
+
