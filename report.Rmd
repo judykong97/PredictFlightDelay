@@ -49,55 +49,41 @@ kable(matrix(temp, nrow = 4, byrow = T, dimnames = list(c("DISTANCE, no delay", 
 From Figure 1, we see that flight delays are more likely to occur in the summer months of June, July, and August. We also note December which is most likely for the winter holidays. In Table 2, we see that the `DISTANCE` variable does not actually differ much between the two labels, however `CRS_DEP_TIME` does appear to have a significant difference. 
 
 ## Supervised Analysis
+After acquiring the above variables, we further ran a lasso regression to aid in variable selection. This was primarily because we had many categorical variables and we deemed them to not all be useful. We used the `model.matrix` function to create a design matrix to account for each categorical variable.
 
-We experimented with the following models for supervised analysis: unregularized logistic regression, L1 regularized logistic regression (Lasso Regression), unpruned decision tree, pruned decision tree, naive random forest, and balanced random forest.
+To acquire an adequate tuning parameter, we ran a 10-fold cross validation for lasso regression. We then used the 1-standard error $\lambda$ rather the minimum due to the large imbalance in labels. Through the lasso regression, we further removed `r lasso.rm`. These were the final variables used for our model, excluding some specific months in `MONTHS`.
 
-To evaluate the models we experimented with, we used 80% of the given data set as the training set and 20% of the given data set as the test set. 
+* `QUARTER`: Earlier in our EDA we saw that the summer months typically saw more delays.
+* `MONTH`: For the same reason as `QUARTER` (there might be some correlation with `QUARTER` but we chose to ignore it in this case).
+* `DAY_OF_MONTH`: Not to much intuition behind this other than perhaps more people travel in the beginnings and ends of the month rather than in the middle.
+* `DAY_OF_WEEK`: While for the most part the day of the week was uniformly distributed, there tended to be less delays over the weekend.
+* `CARRIER`: In our EDA we saw that different carriers have larger rates of delay
+* `DEST`: Certain destinations might have higher chances of extreme weather conditions or high traffice (mostly NY airports)
+* `CRS_DEP_TIME`: In our EDA we saw that delays usually occurred later in the day
 
-We first ran logistic regression on the pre-processed data, getting the same miss rate as predicting all zeros and and AUC value extremely close to 0.5. We observed the data and found that this is because we have an extremely unbalanced data set - most of the responses in the training set are "0"'s while very few of them are "1"'s. Thus, our logistic regression model gives 0 for all rows in the test set.
+We continued further by using a random forest with 500 trees. At first we used the naive random forest, and got a ROC curve only slightly better than the previous models. However, as mentioned above, the training data set is extremely imbalanced. For that reason we decided to use a balanced random forest. From this, we were able to achieve an AUC of 0.82 on training and 0.62 on testing. We reported an approximation of 0.59 due to an accidental error while coding that was resolved for this report.
 
-To simplify our model, we used Lasso Regression for variable selection, so that we could have a smaller number of parameters to include in the models, thus prevent overfitting. The prediction results of Lasso Regression itself was also not quite optimal like the unregularized logistic regression, with all-zero predictions and an AUC value extremely close to 0.5. However, by running Lasso Regression, we identified a list of parameters to keep for future models 
-
-* `MONTH`, which makes sense to us because the chances of delay might differ in different seasons and different times of the year
-* `DAY_OF_MONTH`, which makes sense to us because in each month there might be certain dates with more traffic than the other dates
-* `CARRIER`, which makes sense to us because different companies have different delay rates for flights
-* `DEST`, which makes sense to us because certain destinations might have a higher chance of extreme whether conditions or high traffice etc., thus have a higher change of delay
-* `CRS_DEP_TIME`, which makes sense to us because chances of flight delay might be different during different times of the day
-* `CRS_ARR_TIME`, `CRS_ELAPSED_TIME`, and `DISTANCE_GROUP`, which are associated with the distance of flights, thus might also influence chance of flight delay
+```{r, echo = F, fig.height = 3, fig.width = 5, fig.caption = "ROC curve of the balanced random forest on our training and testing.", fig.align="center"}
+plot(roc(y, preds))
+plot(roc(y.vis, preds.vis), add = T, col = "red")
+legend("bottomright", legend = c("training", "testing"), col = c("black", "red"), pch = 20)
+```
 
 ```{r, echo = F}
-# Model selection using Lasso
+temp = matrix(c(0.75, 0.89, 0.77, 0.84, 0.4, 0.80), byrow = T, nrow = 2, dimnames = list(c("Training", "Testing"), c("Sensitivity", "Specificity", "Accuracy")))
+kable(temp, caption = "Sensitivity and Specificity of the balanced random forest.")
 ```
 
-Then, we experimented with decision tree (should we include decision trees here??????????)
+## Analysis of Results
+In looking at the variable importance plot, we see that `CRS_DEP_TIME` seems to be the dominating variable.
 
-Then we decided to experiment with random forest. We first used the naive random forest, and got a ROC curve slightly better than the previous models. However, as mentioned above, the training data set is extremely unbalanced and favors "0" responses, the naive random forest model is not doing a very good job.
-
-```{r echo = F}
-# Naive random forest
-```
-
-Thus, based on the naive random forest model, we wanted the model to favor both responses and thus experimented with balanced random forest. After downsampling, the model now favors both the "0" responses and the "1" responses, so we have more "1" predictions with this model. The balanced random forest model seems to have much better performance with a much higher AUC compared to all the previous models.
-
-```{r echo = F}
-# Balanced random forest
-```
-
-The ROC curves of all models we've experimented with are as below.
-
-```{r echo = F}
-# ROC curve including logistic, lasso, (unpruned dt, pruned dt), naive rf, balanced rf
-# I have some code here but for I slightly lost track of the the models 
-# roc_1 = roc(test$y, pred)
-# plot(roc_1, col = "black")
-# plot(roc_2, col = "red", add = TRUE)
-# plot(roc_3, col = "blue", add = TRUE)
-# legend('topleft', fill=c('black', 'red', 'blue'), cex = 0.75, 
-#       legend=c("Decision Tree (pruned)", "Random Forest", "Balanced Randome Forest"))
+```{r, echo = F, fig.height = 5, fig.width = 10, fig.caption = "Variable importance plot and partial independence plot."}
+par(mfrow = c(1, 2))
+varImpPlot(bal.rf, n.var = 5)
+partialPlot(bal.rf, pred.data = x.guess, x.var = "CRS_DEP_TIME", which.class = 1)
 ```
 
 
-## Analysis of Results - CURRENTLY IN THE PROCESS
 ```{r, echo = F}
 actual = read.csv("data/actual.csv")
 actual.dep = actual$DEP_DEL15
@@ -110,15 +96,16 @@ CM = confusionMatrix(actual.dep, preds)
 kable(as.matrix(CM$table), caption = "Confusion matrix on the predicted results. Rows are predictions and columns are the actual.")
 ```
 
--Does a good job at capturing True Negatives, high sensitivity, very low specificity
+We see that our model does a good job at capturing the true negatives. It has high sensitivity but very low specificity. We ended up with an actual AUC of 0.66. We see in the histogram below that due to the high bias in departure time, our model automatically assumes that late flights are delayed. If we didn't care for AUC, we would have to adapt for the tradeoff using some type of penalty when training. When the ratio of $C$ to $r$ is large, we would much rather wait for the flight due to the high cost of missing it. Similarly, when $C$ to $r$ is smaller, we would opt to miss the flight rather than wait. Adjusting $C$ to $r$ is essentially determining whether we care about Sensitivity or Specificity more.
 
-```{r}
-plot(roc(actual.dep, as.numeric(preds)))
-```
+```{r, echo = F, fig.caption = "False positive and false negative of predicted CRS_DEP_TIME. Red represents false positives, blue false negatives."}
+FP = actual[which(preds == 1 & preds != actual.dep),]
+FN = actual[which(preds == 0 & preds != actual.dep),]
+TP = actual[which(preds == 1 & preds == actual.dep),]
+TN = actual[which(preds == 0 & preds == actual.dep),]
 
-```{r}
-right = actual[which(preds == actual.dep),]
-wrong = actual[which(preds != actual.dep),]
+hist(FP$CRS_DEP_TIME, col = rgb(1, 0, 0, 0.7), main = "CRS_DEP_TIME", xlab = "CRS_DEP_TIME")
+hist(FN$CRS_DEP_TIME, col = rgb(0, 0, 1, 0.7), add = T)
 ```
 
 ### Further Remarks

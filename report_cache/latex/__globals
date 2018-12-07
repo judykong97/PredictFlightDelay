@@ -11,5 +11,12 @@ eval
 unnamed-chunk-1	kable	matrix	c	T	list
 unnamed-chunk-2	months.del	table	onlyPIT	MONTH	DEP_DEL15	sum	months.no	plot	lines	rgb
 unnamed-chunk-3	temp	c	summary	onlyPIT	DISTANCE	which	DEP_DEL15	CRS_DEP_TIME	kable	matrix	T	list	names
-unnamed-chunk-4	actual	read.csv	actual.dep	DEP_DEL15	which	is.na	as.factor	load	preds	as.integer	delay.guesses	CM	confusionMatrix	kable	as.matrix	table
-unnamed-chunk-5	plot	roc	actual.dep	as.numeric	preds
+unnamed-chunk-4	plot	roc	y	preds	y.vis	preds.vis	T	legend	c
+unnamed-chunk-5	temp	matrix	c	T	list	kable
+unnamed-chunk-6	par	c	varImpPlot	bal.rf	partialPlot	x.guess
+unnamed-chunk-7	actual	read.csv	actual.dep	DEP_DEL15	which	is.na	as.factor	load	preds	as.integer	delay.guesses	CM	confusionMatrix	kable	as.matrix	table
+unnamed-chunk-8	FP	actual	which	preds	actual.dep	FN	TP	TN	hist	CRS_DEP_TIME	rgb	T
+unnamed-chunk-9	FP	actual	which	preds	actual.dep	FN	TP	TN	hist	CRS_DEP_TIME	rgb	T
+unnamed-chunk-10	FP	actual	which	preds	actual.dep	FN	TP	TN	hist	CRS_DEP_TIME	rgb	T
+unnamed-chunk-11	plot	roc	actual.dep	as.numeric	preds
+unnamed-chunk-12	FP	actual	which	preds	actual.dep	FN	TP	TN	hist	CRS_DEP_TIME	rgb	T
