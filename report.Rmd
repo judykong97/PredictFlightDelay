@@ -50,8 +50,52 @@ From Figure 1, we see that flight delays are more likely to occur in the summer 
 
 ## Supervised Analysis
 
+We experimented with the following models for supervised analysis: unregularized logistic regression, L1 regularized logistic regression (Lasso Regression), unpruned decision tree, pruned decision tree, naive random forest, and balanced random forest.
 
-write about using the lasso for variable selection, write about using the balanced random forest
+To evaluate the models we experimented with, we used 80% of the given data set as the training set and 20% of the given data set as the test set. 
+
+We first ran logistic regression on the pre-processed data, getting the same miss rate as predicting all zeros and and AUC value extremely close to 0.5. We observed the data and found that this is because we have an extremely unbalanced data set - most of the responses in the training set are "0"'s while very few of them are "1"'s. Thus, our logistic regression model gives 0 for all rows in the test set.
+
+To simplify our model, we used Lasso Regression for variable selection, so that we could have a smaller number of parameters to include in the models, thus prevent overfitting. The prediction results of Lasso Regression itself was also not quite optimal like the unregularized logistic regression, with all-zero predictions and an AUC value extremely close to 0.5. However, by running Lasso Regression, we identified a list of parameters to keep for future models 
+
+* `MONTH`, which makes sense to us because the chances of delay might differ in different seasons and different times of the year
+* `DAY_OF_MONTH`, which makes sense to us because in each month there might be certain dates with more traffic than the other dates
+* `CARRIER`, which makes sense to us because different companies have different delay rates for flights
+* `DEST`, which makes sense to us because certain destinations might have a higher chance of extreme whether conditions or high traffice etc., thus have a higher change of delay
+* `CRS_DEP_TIME`, which makes sense to us because chances of flight delay might be different during different times of the day
+* `CRS_ARR_TIME`, `CRS_ELAPSED_TIME`, and `DISTANCE_GROUP`, which are associated with the distance of flights, thus might also influence chance of flight delay
+
+```{r, echo = F}
+# Model selection using Lasso
+```
+
+Then, we experimented with decision tree (should we include decision trees here??????????)
+
+Then we decided to experiment with random forest. We first used the naive random forest, and got a ROC curve slightly better than the previous models. However, as mentioned above, the training data set is extremely unbalanced and favors "0" responses, the naive random forest model is not doing a very good job.
+
+```{r echo = F}
+# Naive random forest
+```
+
+Thus, based on the naive random forest model, we wanted the model to favor both responses and thus experimented with balanced random forest. After downsampling, the model now favors both the "0" responses and the "1" responses, so we have more "1" predictions with this model. The balanced random forest model seems to have much better performance with a much higher AUC compared to all the previous models.
+
+```{r echo = F}
+# Balanced random forest
+```
+
+The ROC curves of all models we've experimented with are as below.
+
+```{r echo = F}
+# ROC curve including logistic, lasso, (unpruned dt, pruned dt), naive rf, balanced rf
+# I have some code here but for I slightly lost track of the the models 
+# roc_1 = roc(test$y, pred)
+# plot(roc_1, col = "black")
+# plot(roc_2, col = "red", add = TRUE)
+# plot(roc_3, col = "blue", add = TRUE)
+# legend('topleft', fill=c('black', 'red', 'blue'), cex = 0.75, 
+#       legend=c("Decision Tree (pruned)", "Random Forest", "Balanced Randome Forest"))
+```
+
 
 ## Analysis of Results - CURRENTLY IN THE PROCESS
 ```{r, echo = F}
